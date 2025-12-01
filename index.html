@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Games Gallery</title>
+  <style>
+    :root {
+      --bg-color: #f0f4ff;
+      --text-color: #222;
+      --card-bg: #fff;
+      --border-color: #ccc;
+      --focus-outline: #4d90fe;
+      --carousel-bg: #e6ebff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.5;
+      padding: 1.5rem;
+    }
+
+    h2 {
+      margin: 1.5rem 0 1rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .carousel-container {
+      position: relative;
+      margin-bottom: 2.5rem;
+    }
+
+    .carousel {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      padding: 0.75rem 0;
+      gap: 1rem;
+      background-color: var(--carousel-bg);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    .carousel::-webkit-scrollbar {
+      display: none;
+    }
+
+    .carousel {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .carousel-item {
+      scroll-snap-align: start;
+      flex: 0 0 auto;
+      width: 220px;
+    }
+
+    .game-card {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .game-card:focus,
+    .game-card:hover {
+      outline: 2px solid var(--focus-outline);
+      outline-offset: 2px;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .game-card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-content {
+      padding: 0.75rem;
+    }
+
+    .card-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      font-size: 1rem;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      margin-top: 0.25rem;
+    }
+
+    .tag {
+      background-color: #e0e7ff;
+      color: #4f46e5;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      line-height: 1;
+    }
+
+    .carousel-nav {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .nav-btn {
+      background-color: #d1d9f0;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      color: #333;
+      transition: background-color 0.2s;
+    }
+
+    .nav-btn:hover,
+    .nav-btn:focus {
+      background-color: #b2c0e6;
+      outline: 2px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    dialog {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      padding: 0;
+      max-width: 95vw;
+      max-height: 95vh;
+      width: 90vw;
+      height: 85vh;
+      background: white;
+    }
+
+    dialog::backdrop {
+      background: rgba(0,0,0,0.6);
+    }
+
+    .modal-header {
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--carousel-bg);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: 1px solid #ccc;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-btn:hover,
+    .close-btn:focus {
+      background-color: #f0f0f0;
+      outline: 2px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .modal-body {
+      height: calc(100% - 60px);
+    }
+
+    .modal-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    @media (min-width: 768px) {
+      .carousel-item {
+        width: 260px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>My Games Gallery</h1>
+
+  <!-- Секции каруселей будут вставлены сюда скриптом -->
+
+  <script>
+    // === КОНФИГУРАЦИЯ: редактируйте только этот массив! ===
+    const gameSections = [
+      {
+        title: "Математика и английский (счёт в пределах 20)",
+        games: [
+          {
+            title: "Поймай снежинку",
+            preview: "./images/3.png",
+            tags: ["математика", "зима",],
+            url: "" // ← СЮДА ВСТАВЬТЕ ССЫЛКУ НА ИГРУ
+          },
+          {
+            title: "Maze",
+            preview: "./images/2.png",
+            tags: ["неправильные глаголы"],
+            url: "" // ← СЮДА ВСТАВЬТЕ ССЫЛКУ НА ИГРУ
+          },
+          {
+            title: "Поймай игрушку",
+            preview: "./images/1.png",
+            tags: ["Present Simple-Present Continuous"],
+            url: "" // "новаяигра.html"
+          }
+        ]
+      },
+      // Добавьте свои секции ниже, например:
+      // {
+      //   title: "Времена английскиъх глаголов",
+      //   games: [ /* игры */ ]
+      // }
+    ];
+
+    // === ГЕНЕРАЦИЯ HTML ===
+    const body = document.body;
+
+    gameSections.forEach(section => {
+      const container = document.createElement('div');
+      container.className = 'carousel-container';
+
+      const heading = document.createElement('h2');
+      heading.textContent = section.title;
+      container.appendChild(heading);
+
+      const carousel = document.createElement('div');
+      carousel.className = 'carousel';
+      carousel.setAttribute('role', 'region');
+      carousel.setAttribute('aria-label', section.title);
+
+      section.games.forEach((game, index) => {
+        const item = document.createElement('div');
+        item.className = 'carousel-item';
+
+        const card = document.createElement('div');
+        card.className = 'game-card';
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', `Играть в ${game.title}`);
+
+        const img = document.createElement('img');
+        img.src = game.preview;
+        img.alt = `Превью игры: ${game.title}`;
+        img.loading = 'lazy';
+
+        const content = document.createElement('div');
+        content.className = 'card-content';
+
+        const title = document.createElement('div');
+        title.className = 'card-title';
+        title.textContent = game.title;
+
+        const tags = document.createElement('div');
+        tags.className = 'card-tags';
+        game.tags.forEach(tagText => {
+          const tag = document.createElement('span');
+          tag.className = 'tag';
+          tag.textContent = tagText;
+          tags.appendChild(tag);
+        });
+
+        content.appendChild(title);
+        content.appendChild(tags);
+
+        card.appendChild(img);
+        card.appendChild(content);
+        item.appendChild(card);
+        carousel.appendChild(item);
+
+        // Сохраняем URL в dataset для последующего использования
+        card.dataset.url = game.url;
+        card.dataset.title = game.title;
+
+        card.addEventListener('click', openModal);
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openModal.call(card);
+          }
+        });
+      });
+
+      container.appendChild(carousel);
+
+      // Кнопки навигации
+      const nav = document.createElement('div');
+      nav.className = 'carousel-nav';
+
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'nav-btn';
+      prevBtn.setAttribute('aria-label', 'Прокрутить влево');
+      prevBtn.textContent = '←';
+      prevBtn.addEventListener('click', () => {
+        carousel.scrollBy({ left: -carousel.offsetWidth, behavior: 'smooth' });
+      });
+
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'nav-btn';
+      nextBtn.setAttribute('aria-label', 'Прокрутить вправо');
+      nextBtn.textContent = '→';
+      nextBtn.addEventListener('click', () => {
+        carousel.scrollBy({ left: carousel.offsetWidth, behavior: 'smooth' });
+      });
+
+      nav.appendChild(prevBtn);
+      nav.appendChild(nextBtn);
+      container.appendChild(nav);
+
+      body.appendChild(container);
+    });
+
+    // === МОДАЛЬНОЕ ОКНО ===
+    const modal = document.createElement('dialog');
+    modal.setAttribute('aria-labelledby', 'modal-title');
+
+    const modalHeader = document.createElement('div');
+    modalHeader.className = 'modal-header';
+
+    const modalTitle = document.createElement('h2');
+    modalTitle.id = 'modal-title';
+    modalTitle.className = 'modal-title';
+    modalHeader.appendChild(modalTitle);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'close-btn';
+    closeBtn.setAttribute('aria-label', 'Закрыть');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', closeModal);
+    modalHeader.appendChild(closeBtn);
+
+    const modalBody = document.createElement('div');
+    modalBody.className = 'modal-body';
+
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('loading', 'lazy');
+    modalBody.appendChild(iframe);
+
+    modal.appendChild(modalHeader);
+    modal.appendChild(modalBody);
+    document.body.appendChild(modal);
+
+    // Обработчики
+    function openModal() {
+      const url = this.dataset.url;
+      const title = this.dataset.title;
+
+      if (!url) {
+        alert('Ссылка на игру не указана. Отредактируйте JSON.');
+        return;
+      }
+
+      modalTitle.textContent = title;
+      iframe.src = url;
+      modal.showModal();
+      modal.focus();
+    }
+
+    function closeModal() {
+      iframe.src = ''; // Очищаем iframe
+      modal.close();
+    }
+
+    // Закрытие по Esc
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && modal.open) {
+        closeModal();
+      }
+    });
+
+    // Закрытие кликом по backdrop (для браузеров без поддержки ::backdrop)
+    modal.addEventListener('click', e => {
+      const rect = modal.getBoundingClientRect();
+      if (
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom
+      ) {
+        closeModal();
+      }
+    });
+  </script>
+
+</body>
+</html>

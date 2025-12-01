@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Toys Catcher + English Quiz</title>
+  <style>
+    /* Фон всей страницы — яркие воздушные шары (base64) */
+    body {
+      margin: 0;
+      padding: 30px;
+      background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iNjAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZmNmZmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0MCIgZmlsbD0iI2ZmY2NkZCIgb3BhY2l0eT0iMC4xIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLTIwIj5BSEFISUEhPC90ZXh0PjxjaXJjbGUgY3g9IjEwMCIgY3k9IjE1MCIgcj0iNDAiIGZpbGw9IiNmZjAwZmYiIGZpbGwtb3BhY2l0eT0iMC40Ii8+PGNpcmNsZSBjeD0iNTAwIiBjeT0iMTAwIiByPSI1MCIgZmlsbD0iIzAwZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjQiLz48Y2lyY2xlIGN4PSIyMDAiIGN5PSI0MDAiIHI9IjM1IiBmaWxsPSIjZmZmZjAwIiBmaWxsLW9wYWNpdHk9IjAuNCIvPjxjaXJjbGUgY3g9IjQwMCIgY3k9IjUwMCIgcj0iNDUiIGZpbGw9IiMwMGZmMDAiIGZpbGwtb3BhY2l0eT0iMC40Ii8+PGNpcmNsZSBjeD0iMzAwIiBjeT0iMjUwIiByPSIzMCIgZmlsbD0iI2ZmMDAwMCIgZmlsbC1vcGFjaXR5PSIwLjQiLz48L3N2Zz4=');
+      background-size: auto;
+      background-repeat: repeat;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      overflow: auto;
+      text-align: center;
+      min-height: 100vh;
+    }
+
+    /* Игровая зона — нежно-розовая */
+    #gameContainer {
+      position: relative;
+      width: 600px;
+      height: 600px;
+      margin: 0 auto;
+      background: #ffecf0;
+      border-radius: 20px;
+      box-shadow: 0 0 25px rgba(248, 187, 208, 0.8);
+      overflow: hidden;
+    }
+
+    #gameCanvas {
+      background: transparent;
+    }
+
+    /* Остальные стили без изменений */
+    #quizScreen {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.92);
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      border-radius: 20px;
+    }
+    #quizQuestion {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #d81b60;
+    }
+    .quizBtn {
+      padding: 12px 30px;
+      margin: 10px;
+      font-size: 20px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      background: #ffcc80;
+      color: #e65100;
+      transition: 0.2s;
+    }
+    .quizBtn:hover {
+      background: #ffb74d;
+    }
+    #scoreDisplay {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #c2185b;
+      background: rgba(255,255,255,0.6);
+      padding: 4px 10px;
+      border-radius: 10px;
+      z-index: 5;
+    }
+    #livesDisplay {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #c2185b;
+      background: rgba(255,255,255,0.6);
+      padding: 4px 10px;
+      border-radius: 10px;
+      z-index: 5;
+    }
+    #winScreen {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      border-radius: 20px;
+    }
+    #winMessage {
+      font-size: 36px;
+      color: #ad1457;
+      margin-bottom: 20px;
+    }
+    #confetti {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <div id="scoreDisplay">Score: 0</div>
+    <div id="livesDisplay">Lives: 3</div>
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+    <div id="quizScreen">
+      <div id="quizQuestion">...</div>
+      <button class="quizBtn" id="btnOption1">...</button>
+      <button class="quizBtn" id="btnOption2">...</button>
+    </div>
+
+    <div id="winScreen">
+      <div id="winMessage">🎉 Поздравляем! 🎉</div>
+      <div>Ты набрал 50 очков!</div>
+      <canvas id="confetti"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const toysImageUrls = {
+      crab: "https://i.postimg.cc/mP0PgD6L/crab-svgrepo-com.png",
+      crocodile: "https://i.postimg.cc/jDGDS5kJ/crocodile-svgrepo-com.png",
+      dinosaur: "https://i.postimg.cc/w1S1jvby/dinosaur-svgrepo-com.png",
+      elk: "https://i.postimg.cc/FY2YHRnL/elk-svgrepo-com.png",
+      fox: "https://i.postimg.cc/Ff37d42s/fox-svgrepo-com.png",
+      raccoon: "https://i.postimg.cc/sB7vQrth/raccoon-svgrepo-com.png",
+      cow: "https://i.postimg.cc/1gwfnQLw/the-cow-svgrepo-com.png",
+      whale: "https://i.postimg.cc/bGksDhK0/whale-svgrepo-com.png"
+    };
+
+    const emojiMap = {
+      crab: "🦀",
+      crocodile: "🐊",
+      dinosaur: "🦕",
+      elk: "🦌",
+      fox: "🦊",
+      raccoon: "🦝",
+      cow: "🐮",
+      whale: "🐋"
+    };
+
+    const imageCache = {};
+    let imagesLoaded = 0;
+    const totalImages = Object.keys(toysImageUrls).length;
+
+    function preloadImages() {
+      for (const [key, url] of Object.entries(toysImageUrls)) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          imageCache[key] = img;
+          imagesLoaded++;
+        };
+        img.onerror = () => {
+          imagesLoaded++;
+        };
+        img.src = url;
+      }
+    }
+
+    const quizzes = [
+      { question: "She usually _____ tea in the morning.", options: ["drinks", "is drinking"], correct: 0 },
+      { question: "Look! He _____ a song right now.", options: ["sings", "is singing"], correct: 1 },
+      { question: "They _____ football every Saturday.", options: ["play", "are playing"], correct: 0 },
+      { question: "Shh! The baby _____ .", options: ["sleeps", "is sleeping"], correct: 1 },
+      { question: "My dad _____ to work by bus.", options: ["goes", "is going"], correct: 0 },
+      { question: "I _____ dinner at the moment.", options: ["cook", "am cooking"], correct: 1 },
+      { question: "Cats _____ milk.", options: ["like", "are liking"], correct: 0 },
+      { question: "Why _____ you crying?", options: ["do", "are"], correct: 1 },
+      { question: "We _____ English on Mondays.", options: ["study", "are studying"], correct: 0 },
+      { question: "She _____ her homework now.", options: ["does", "is doing"], correct: 1 },
+      { question: "He _____ chocolate ice cream.", options: ["loves", "is loving"], correct: 0 },
+      { question: "They _____ TV at this moment.", options: ["watch", "are watching"], correct: 1 },
+      { question: "Birds _____ south in winter.", options: ["fly", "are flying"], correct: 0 },
+      { question: "I _____ my keys. Where are they?", options: ["lose", "am losing"], correct: 1 },
+      { question: "The sun _____ in the east.", options: ["rises", "is rising"], correct: 0 },
+      { question: "Listen! The teacher _____ .", options: ["talks", "is talking"], correct: 1 },
+      { question: "Water _____ at 100°C.", options: ["boils", "is boiling"], correct: 0 },
+      { question: "He _____ to music now.", options: ["listens", "is listening"], correct: 1 },
+      { question: "I _____ coffee in the evening.", options: ["don't drink", "am not drinking"], correct: 0 },
+      { question: "They _____ a new house these days.", options: ["build", "are building"], correct: 1 }
+    ];
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreDisplay = document.getElementById("scoreDisplay");
+    const livesDisplay = document.getElementById("livesDisplay");
+    const quizScreen = document.getElementById("quizScreen");
+    const quizQuestion = document.getElementById("quizQuestion");
+    const btnOption1 = document.getElementById("btnOption1");
+    const btnOption2 = document.getElementById("btnOption2");
+    const winScreen = document.getElementById("winScreen");
+    const confettiCanvas = document.getElementById("confetti");
+    const confettiCtx = confettiCanvas.getContext("2d");
+
+    confettiCanvas.width = canvas.width;
+    confettiCanvas.height = canvas.height;
+
+    const basketWidth = 140;
+    const basketHeight = 50;
+    let basketX = canvas.width / 2 - basketWidth / 2;
+    const basketSpeed = 12;
+
+    let score = 0;
+    let lives = 3;
+    let toys = [];
+    let toySpawnRate = 35;
+    let frameCount = 0;
+    let gameRunning = false;
+    let waitingForQuiz = false;
+    let currentQuizIndex = 0;
+
+    const keys = { ArrowLeft: false, ArrowRight: false };
+    window.addEventListener("keydown", (e) => { if (e.key in keys) keys[e.key] = true; });
+    window.addEventListener("keyup", (e) => { if (e.key in keys) keys[e.key] = false; });
+
+    canvas.addEventListener("mousemove", (e) => {
+      if (!waitingForQuiz) {
+        const rect = canvas.getBoundingClientRect();
+        basketX = e.clientX - rect.left - basketWidth / 2;
+        basketX = Math.max(0, Math.min(canvas.width - basketWidth, basketX));
+      }
+    });
+
+    function createToy() {
+      const types = Object.keys(toysImageUrls);
+      const type = types[Math.floor(Math.random() * types.length)];
+      return {
+        x: Math.random() * (canvas.width - 100),
+        y: -100,
+        width: 100,
+        height: 100,
+        speed: (1.2 + Math.random() * 1.3) * 2,
+        type: type
+      };
+    }
+
+    function updateToys() {
+      if (frameCount % toySpawnRate === 0) {
+        toys.push(createToy());
+      }
+      frameCount++;
+
+      for (let i = toys.length - 1; i >= 0; i--) {
+        const t = toys[i];
+        t.y += t.speed;
+
+        if (
+          t.y + t.height >= canvas.height - basketHeight &&
+          t.x + t.width > basketX &&
+          t.x < basketX + basketWidth
+        ) {
+          toys.splice(i, 1);
+          score++;
+          scoreDisplay.textContent = `Score: ${score}`;
+
+          // Викторина каждые 10 очков
+          if (score > 0 && score % 10 === 0 && score <= 50 && !waitingForQuiz) {
+            showQuiz();
+          }
+          if (score >= 50) win();
+        } else if (t.y > canvas.height) {
+          toys.splice(i, 1);
+          lives--;
+          livesDisplay.textContent = `Lives: ${lives}`;
+          if (lives <= 0) gameOver();
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Корзина
+      ctx.fillStyle = "#8d6e63";
+      ctx.fillRect(basketX, canvas.height - basketHeight, basketWidth, basketHeight);
+      ctx.fillStyle = "#5d4037";
+      ctx.fillRect(basketX + 8, canvas.height - basketHeight + 8, basketWidth - 16, basketHeight - 16);
+
+      // Игрушки
+      toys.forEach(t => {
+        const img = imageCache[t.type];
+        if (img && img.complete) {
+          ctx.drawImage(img, t.x, t.y, t.width, t.height);
+        } else {
+          ctx.font = "80px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(emojiMap[t.type] || "🧸", t.x + t.width / 2, t.y + t.height / 2);
+        }
+      });
+    }
+
+    function showQuiz() {
+      if (currentQuizIndex >= quizzes.length) currentQuizIndex = 0;
+      const q = quizzes[currentQuizIndex];
+      quizQuestion.textContent = q.question;
+      btnOption1.textContent = q.options[0];
+      btnOption2.textContent = q.options[1];
+      btnOption1.onclick = () => handleQuizAnswer(q.correct === 0);
+      btnOption2.onclick = () => handleQuizAnswer(q.correct === 1);
+      quizScreen.style.display = "flex";
+      waitingForQuiz = true;
+      gameRunning = false;
+    }
+
+    function handleQuizAnswer(isCorrect) {
+      quizScreen.style.display = "none";
+      waitingForQuiz = false;
+      gameRunning = true;
+      if (!isCorrect) {
+        score = Math.max(0, score - 5);
+        scoreDisplay.textContent = `Score: ${score}`;
+      }
+      currentQuizIndex++;
+    }
+
+    function gameOver() {
+      gameRunning = false;
+      alert("Game Over! Try again.");
+      resetGame();
+    }
+
+    function win() {
+      gameRunning = false;
+      winScreen.style.display = "flex";
+      startConfetti();
+    }
+
+    function startConfetti() {
+      const pieces = [];
+      const colors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff"];
+      for (let i = 0; i < 200; i++) {
+        pieces.push({
+          x: Math.random() * confettiCanvas.width,
+          y: -20,
+          size: Math.random() * 12 + 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          speed: Math.random() * 4 + 2,
+          angle: Math.random() * Math.PI * 2
+        });
+      }
+      function drawConfetti() {
+        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        for (let p of pieces) {
+          confettiCtx.fillStyle = p.color;
+          confettiCtx.fillRect(p.x, p.y, p.size, p.size);
+          p.y += p.speed;
+          p.x += Math.sin(p.angle) * 0.5;
+          p.angle += 0.02;
+        }
+        if (pieces[0].y < confettiCanvas.height + 50) {
+          requestAnimationFrame(drawConfetti);
+        }
+      }
+      drawConfetti();
+    }
+
+    function resetGame() {
+      score = 0;
+      lives = 3;
+      toys = [];
+      frameCount = 0;
+      currentQuizIndex = 0;
+      basketX = canvas.width / 2 - basketWidth / 2;
+      scoreDisplay.textContent = "Score: 0";
+      livesDisplay.textContent = "Lives: 3";
+      winScreen.style.display = "none";
+      quizScreen.style.display = "none";
+      waitingForQuiz = false;
+      gameRunning = true;
+    }
+
+    function gameLoop() {
+      if (gameRunning && !waitingForQuiz) {
+        if (keys.ArrowLeft) basketX = Math.max(0, basketX - basketSpeed);
+        if (keys.ArrowRight) basketX = Math.min(canvas.width - basketWidth, basketX + basketSpeed);
+        updateToys();
+        draw();
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    function checkImagesAndStart() {
+      if (imagesLoaded >= totalImages) {
+        gameRunning = true;
+        gameLoop();
+      } else {
+        setTimeout(checkImagesAndStart, 50);
+      }
+    }
+
+    preloadImages();
+    checkImagesAndStart();
+  </script>
+</body>
+</html>

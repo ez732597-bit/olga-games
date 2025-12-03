@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Memory — 2 Players</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Comic Sans MS', 'Marker Felt', 'Segoe UI', sans-serif;
+        }
+        
+        :root {
+            --primary: #4CAF50;
+            --secondary: #FF9800;
+            --accent: #2196F3;
+            --light: #f9f9f9;
+            --dark: #333;
+            --card-color: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.15);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e0f7fa, #f8bbd0);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            color: var(--dark);
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 700px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+        
+        header {
+            text-align: center;
+            margin: 5px 0;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            text-shadow: 1px 1px 2px var(--shadow);
+            margin-bottom: 4px;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            background: var(--card-color);
+            padding: 10px;
+            border-radius: 16px;
+            box-shadow: 0 3px 8px var(--shadow);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .player-score {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 15px;
+            border-radius: 12px;
+            width: 44%;
+        }
+        
+        .player1 {
+            background: rgba(76, 175, 80, 0.15);
+        }
+        
+        .player2 {
+            background: rgba(33, 150, 243, 0.15);
+        }
+        
+        .player-name {
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        
+        .score {
+            font-size: 1.6rem;
+            font-weight: bold;
+        }
+        
+        .current-turn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--accent);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-weight: bold;
+            margin-top: 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            font-size: 0.95rem;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1/1;
+            padding: 8px;
+        }
+        
+        .card {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1/1;
+            cursor: pointer;
+            perspective: 800px;
+        }
+        
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.5s;
+            transform-style: preserve-3d;
+            border-radius: 16px;
+            box-shadow: 0 3px 6px var(--shadow);
+        }
+        
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        
+        .card-front {
+            background: #FFD54F;
+            background: linear-gradient(135deg, #FFD54F, #FFB300);
+        }
+        
+        .card-back {
+            background: var(--card-color);
+            transform: rotateY(180deg);
+            padding: 6px;
+        }
+        
+        .animal-icon {
+            font-size: 2.6rem;
+            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            justify-content: center;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 3px 6px var(--shadow);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px var(--shadow);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-tertiary {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: var(--card-color);
+            padding: 24px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 460px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            transform: scale(0.85);
+            transition: transform 0.35s;
+        }
+        
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal h2 {
+            color: var(--primary);
+            margin-bottom: 16px;
+            font-size: 1.6rem;
+        }
+        
+        .modal p {
+            margin: 8px 0;
+            line-height: 1.5;
+            font-size: 1rem;
+        }
+        
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        
+        .quiz-option {
+            padding: 10px;
+            background: #E3F2FD;
+            border: 2px solid #90CAF9;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        
+        .quiz-option:hover {
+            background: #BBDEFB;
+            transform: translateY(-1px);
+        }
+        
+        .quiz-option.selected {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        
+        .winner-message {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 16px 0;
+            color: var(--primary);
+            text-shadow: 1px 1px 2px var(--shadow);
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #777;
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 2000;
+        }
+        
+        @media (max-width: 500px) {
+            .game-board {
+                max-width: 95vw;
+                gap: 8px;
+            }
+            
+            .animal-icon {
+                font-size: 2.2rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .score {
+                font-size: 1.4rem;
+            }
+            
+            .btn {
+                padding: 9px 14px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Animal Memory — 2 Players</h1>
+            <div class="subtitle">Match pairs, answer the quiz to score!</div>
+        </header>
+        
+        <div class="top-bar">
+            <div class="player-score player1">
+                <div class="player-name">Player 1</div>
+                <div class="score" id="score1">0</div>
+            </div>
+            <div class="current-turn" id="currentTurn">Player 1's Turn</div>
+            <div class="player-score player2">
+                <div class="player-name">Player 2</div>
+                <div class="score" id="score2">0</div>
+            </div>
+        </div>
+        
+        <div class="game-board" id="gameBoard"></div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" id="newGameBtn">
+                <i class="fas fa-sync-alt"></i> New Game
+            </button>
+            <button class="btn btn-secondary" id="passTurnBtn">
+                <i class="fas fa-exchange-alt"></i> Pass Turn
+            </button>
+            <button class="btn btn-tertiary" id="helpBtn">
+                <i class="fas fa-question-circle"></i> Help
+            </button>
+        </div>
+    </div>
+    
+    <!-- Quiz Modal -->
+    <div class="modal" id="quizModal">
+        <div class="modal-content">
+            <span class="close-btn" id="quizClose">&times;</span>
+            <h2>Grammar Quiz!</h2>
+            <div id="quizQuestion">Question will appear here</div>
+            <div class="quiz-options" id="quizOptions"></div>
+        </div>
+    </div>
+    
+    <!-- Winner Modal -->
+    <div class="modal" id="winnerModal">
+        <div class="modal-content">
+            <span class="close-btn" id="winnerClose">&times;</span>
+            <h2>Game Over!</h2>
+            <div class="winner-message" id="winnerMessage">Player 1 wins!</div>
+            <p>Congratulations! You matched all the animal pairs!</p>
+            <button class="btn btn-primary" id="playAgainBtn">Play Again</button>
+        </div>
+    </div>
+    
+    <!-- Help Modal -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <span class="close-btn" id="helpClose">&times;</span>
+            <h2>How to Play</h2>
+            <p>1. Players take turns flipping two animal cards.</p>
+            <p>2. If you find a matching pair, you get to answer a grammar quiz!</p>
+            <p>3. Choose the correct option: <strong>is</strong>, <strong>are</strong>, or <strong>am</strong>.</p>
+            <p>4. Correct answer = 1 point and another turn!</p>
+            <p>5. Wrong answer = no points, turn passes to the other player.</p>
+            <p>6. The player with the most points when all pairs are matched wins!</p>
+        </div>
+    </div>
+
+    <script>
+        const gameState = {
+            cards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+            currentPlayer: 1,
+            scores: [0, 0],
+            lockBoard: false,
+            quizActive: false,
+            currentQuiz: null
+        };
+        
+        const animals = [
+            { icon: "🐶", pairs: 2 },
+            { icon: "🐱", pairs: 2 },
+            { icon: "🐘", pairs: 2 },
+            { icon: "🦁", pairs: 2 },
+            { icon: "🦒", pairs: 2 },
+            { icon: "🐵", pairs: 2 },
+            { icon: "🐢", pairs: 2 },
+            { icon: "🦊", pairs: 2 }
+        ];
+        
+        const quizQuestions = [
+            { question: "__ this a cat?", answer: "is", options: ["is", "are", "am"] },
+            { question: "They __ birds.", answer: "are", options: ["is", "are", "am"] },
+            { question: "This __ a turtle.", answer: "is", options: ["is", "are", "am"] },
+            { question: "We __ happy.", answer: "are", options: ["is", "are", "am"] },
+            { question: "The dogs __ barking.", answer: "are", options: ["is", "are", "am"] },
+            { question: "I __ playing.", answer: "am", options: ["is", "are", "am"] },
+            { question: "She __ my friend.", answer: "is", options: ["is", "are", "am"] },
+            { question: "You __ smart.", answer: "are", options: ["is", "are", "am"] },
+            { question: "He __ running.", answer: "is", options: ["is", "are", "am"] },
+            { question: "The elephants __ big.", answer: "are", options: ["is", "are", "am"] },
+            { question: "It __ raining.", answer: "is", options: ["is", "are", "am"] },
+            { question: "They __ lions.", answer: "are", options: ["is", "are", "am"] }
+        ];
+        
+        const gameBoard = document.getElementById('gameBoard');
+        const score1El = document.getElementById('score1');
+        const score2El = document.getElementById('score2');
+        const currentTurnEl = document.getElementById('currentTurn');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const passTurnBtn = document.getElementById('passTurnBtn');
+        const helpBtn = document.getElementById('helpBtn');
+        const quizModal = document.getElementById('quizModal');
+        const winnerModal = document.getElementById('winnerModal');
+        const helpModal = document.getElementById('helpModal');
+        const quizClose = document.getElementById('quizClose');
+        const winnerClose = document.getElementById('winnerClose');
+        const helpClose = document.getElementById('helpClose');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const quizQuestionEl = document.getElementById('quizQuestion');
+        const quizOptionsEl = document.getElementById('quizOptions');
+        
+        function initGame() {
+            gameState.flippedCards = [];
+            gameState.matchedPairs = 0;
+            gameState.currentPlayer = 1;
+            gameState.scores = [0, 0];
+            gameState.lockBoard = false;
+            gameState.quizActive = false;
+            
+            updateScores();
+            updateTurnIndicator();
+            
+            let cards = [];
+            animals.forEach(animal => {
+                for (let i = 0; i < animal.pairs; i++) {
+                    cards.push({ icon: animal.icon, id: cards.length });
+                }
+            });
+            
+            shuffleArray(cards);
+            gameState.cards = cards;
+            
+            gameBoard.innerHTML = '';
+            cards.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                cardEl.dataset.index = index;
+                cardEl.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <i class="fas fa-paw" style="font-size: 1.8rem; color: #FF8F00;"></i>
+                        </div>
+                        <div class="card-back">
+                            <div class="animal-icon">${card.icon}</div>
+                        </div>
+                    </div>
+                `;
+                cardEl.addEventListener('click', flipCard);
+                gameBoard.appendChild(cardEl);
+            });
+            
+            [quizModal, winnerModal, helpModal].forEach(modal => modal.classList.remove('active'));
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        function flipCard() {
+            if (gameState.lockBoard || gameState.quizActive) return;
+            const card = this;
+            const index = parseInt(card.dataset.index);
+            if (card.classList.contains('flipped') || gameState.flippedCards.includes(index)) return;
+            
+            card.classList.add('flipped');
+            gameState.flippedCards.push(index);
+            
+            if (gameState.flippedCards.length === 2) {
+                gameState.lockBoard = true;
+                checkForMatch();
+            }
+        }
+        
+        function checkForMatch() {
+            const [firstIndex, secondIndex] = gameState.flippedCards;
+            const firstCard = gameState.cards[firstIndex];
+            const secondCard = gameState.cards[secondIndex];
+            
+            if (firstCard.icon === secondCard.icon) {
+                setTimeout(() => showQuizModal(), 500);
+            } else {
+                setTimeout(() => {
+                    document.querySelectorAll('.card').forEach(card => {
+                        const idx = parseInt(card.dataset.index);
+                        if (gameState.flippedCards.includes(idx)) {
+                            card.classList.remove('flipped');
+                        }
+                    });
+                    gameState.flippedCards = [];
+                    gameState.lockBoard = false;
+                    switchPlayer();
+                }, 800);
+            }
+        }
+        
+        function showQuizModal() {
+            const randomQuestion = quizQuestions[Math.floor(Math.random() * quizQuestions.length)];
+            gameState.currentQuiz = randomQuestion;
+            
+            quizQuestionEl.textContent = randomQuestion.question;
+            quizOptionsEl.innerHTML = '';
+            randomQuestion.options.forEach(option => {
+                const optionEl = document.createElement('div');
+                optionEl.className = 'quiz-option';
+                optionEl.textContent = option;
+                optionEl.addEventListener('click', () => selectQuizOption(option));
+                quizOptionsEl.appendChild(optionEl);
+            });
+            
+            quizModal.classList.add('active');
+            gameState.quizActive = true;
+        }
+        
+        function selectQuizOption(selectedOption) {
+            if (!gameState.quizActive) return;
+            
+            document.querySelectorAll('.quiz-option').forEach(el => el.classList.remove('selected'));
+            event.target.classList.add('selected');
+            
+            setTimeout(() => {
+                const isCorrect = selectedOption === gameState.currentQuiz.answer;
+                if (isCorrect) {
+                    gameState.scores[gameState.currentPlayer - 1]++;
+                    updateScores();
+                }
+                
+                quizModal.classList.remove('active');
+                gameState.quizActive = false;
+                
+                gameState.flippedCards.forEach(index => {
+                    const card = document.querySelector(`.card[data-index="${index}"]`);
+                    card.style.opacity = '0.4';
+                });
+                
+                gameState.matchedPairs++;
+                if (gameState.matchedPairs === 8) {
+                    endGame();
+                } else {
+                    gameState.flippedCards = [];
+                    gameState.lockBoard = false;
+                    if (!isCorrect) switchPlayer();
+                }
+            }, 600);
+        }
+        
+        function switchPlayer() {
+            gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+            updateTurnIndicator();
+        }
+        
+        function updateTurnIndicator() {
+            currentTurnEl.textContent = `Player ${gameState.currentPlayer}'s Turn`;
+            currentTurnEl.style.backgroundColor = gameState.currentPlayer === 1 ? 'var(--primary)' : 'var(--accent)';
+        }
+        
+        function updateScores() {
+            score1El.textContent = gameState.scores[0];
+            score2El.textContent = gameState.scores[1];
+        }
+        
+        function endGame() {
+            let winner = "It's a tie!";
+            if (gameState.scores[0] > gameState.scores[1]) winner = "Player 1 wins!";
+            else if (gameState.scores[1] > gameState.scores[0]) winner = "Player 2 wins!";
+            document.getElementById('winnerMessage').textContent = winner;
+            winnerModal.classList.add('active');
+            createConfetti(150);
+        }
+        
+        function createConfetti(count) {
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#3f51b5', '#03a9f4', '#009688', '#8bc34a', '#ff9800'];
+            for (let i = 0; i < count; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = (Math.random() * 8 + 4) + 'px';
+                confetti.style.height = confetti.style.width;
+                confetti.style.opacity = Math.random() * 0.7 + 0.3;
+                document.body.appendChild(confetti);
+                
+                const animation = confetti.animate([
+                    { top: '-10px', opacity: 1, transform: 'rotate(0deg)' },
+                    { top: '100vh', opacity: 0, transform: 'rotate(' + (Math.random() * 720 - 360) + 'deg)' }
+                ], {
+                    duration: Math.random() * 3000 + 2000,
+                    easing: 'cubic-bezier(0.1, 0.8, 0.2, 1)'
+                });
+                animation.onfinish = () => confetti.remove();
+            }
+        }
+        
+        newGameBtn.addEventListener('click', initGame);
+        passTurnBtn.addEventListener('click', () => !gameState.lockBoard && !gameState.quizActive && switchPlayer());
+        helpBtn.addEventListener('click', () => helpModal.classList.add('active'));
+        quizClose.addEventListener('click', () => { quizModal.classList.remove('active'); gameState.quizActive = false; });
+        winnerClose.addEventListener('click', () => winnerModal.classList.remove('active'));
+        helpClose.addEventListener('click', () => helpModal.classList.remove('active'));
+        playAgainBtn.addEventListener('click', () => { winnerModal.classList.remove('active'); initGame(); });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                quizModal.classList.remove('active');
+                winnerModal.classList.remove('active');
+                helpModal.classList.remove('active');
+                gameState.quizActive = false;
+            }
+        });
+        
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>

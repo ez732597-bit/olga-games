@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Escape the Maze</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            padding: 8px;
+        }
+
+        h1 {
+            font-size: 1.4em;
+            color: #06b6d4;
+            margin: 4px 0 6px;
+            text-align: center;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 360px;
+            background: #1e293b;
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #06b6d4;
+            font-size: 1.2em;
+        }
+
+        .keys-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 8px;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .keys-icons {
+            display: flex;
+            gap: 5px;
+            margin-top: 4px;
+        }
+
+        .key-icon {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fbbf24;
+            opacity: 0.3;
+        }
+
+        .key-icon.collected {
+            opacity: 1;
+        }
+
+        .maze-grid {
+            display: grid;
+            gap: 1px;
+            background: #334155;
+            padding: 3px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            /* Гарантируем, что сетка не вылезет за пределы */
+            max-width: 100%;
+            max-height: calc(100vh - 240px); /* оставляем место для всего остального */
+        }
+
+        .cell {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1e293b;
+            font-size: 14px;
+        }
+
+        .wall {
+            background: #334155;
+        }
+
+        .player::before { content: "🐻"; }
+        .goal::before { content: "🚪"; }
+        .key::before { content: "🗝️"; }
+        .enemy::before { content: "👹"; }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        button {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #475569;
+        }
+
+        /* Модальные окна — компактные */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.92);
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            font-size: 0.95em;
+        }
+
+        .modal h2 {
+            color: #06b6d4;
+            margin-bottom: 14px;
+            font-size: 1.3em;
+        }
+
+        .question {
+            margin-bottom: 16px;
+        }
+
+        .option-btn {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 4px 0;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;
+        }
+
+        .win-message {
+            color: #10b981;
+            font-weight: bold;
+            margin-top: 12px;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Escape the Maze</h1>
+
+    <div class="stats-container">
+        <div class="stat">
+            <span>Time</span>
+            <div class="stat-value" id="timer">00:00</div>
+        </div>
+        <div class="stat">
+            <span>Steps</span>
+            <div class="stat-value" id="steps">0</div>
+        </div>
+    </div>
+
+    <div class="keys-container">
+        <div class="keys-icons" id="keys-icons"></div>
+    </div>
+
+    <div class="maze-grid" id="mazeGrid"></div>
+
+    <div class="controls">
+        <button id="newMazeBtn">New</button>
+        <button id="replayBtn">Replay</button>
+    </div>
+
+    <!-- Модальные окна -->
+    <div id="questionModal" class="modal">
+        <div class="modal-content">
+            <h2>Question</h2>
+            <div class="question" id="questionText"></div>
+            <div id="optionsContainer"></div>
+        </div>
+    </div>
+
+    <div id="winModal" class="modal">
+        <div class="modal-content">
+            <h2>Congratulations!</h2>
+            <p id="winStats"></p>
+            <div class="win-message">⭐ Perfect!</div>
+        </div>
+    </div>
+
+    <script>
+        // === Конфигурация ===
+        const COLS = 13;
+        const ROWS = 13;
+        const KEY_COUNT = 8; // уменьшено, чтобы не перегружать
+
+        // --- Вопросы (сокращённый пример — оставьте свой полный список) ---
+        const questions = [
+            ["Go", "Goed", "Go", "Went", 3],
+            ["Eat", "Eated", "Eat", "Ate", 3],
+            ["See", "Seed", "See", "Saw", 3],
+            ["Take", "Took", "Taked", "Take", 1],
+            ["Come", "Comed", "Come", "Came", 3],
+            ["Give", "Gived", "Give", "Gave", 3],
+            ["Find", "Finded", "Find", "Found", 3],
+            ["Make", "Maked", "Make", "Made", 3],
+            ["Get", "Getted", "Get", "Got", 3],
+            ["Know", "Knowed", "Know", "Knew", 3]
+        ];
+
+        // === Состояние игры ===
+        let maze = [];
+        let player = { x: 1, y: 1 };
+        let goal = { x: -1, y: -1 };
+        let keys = [];
+        let enemies = [];
+        let collectedKeys = 0;
+        let gameStarted = false;
+        let startTime = 0;
+        let steps = 0;
+        let timerInterval = null;
+
+        // === DOM ===
+        const mazeGrid = document.getElementById('mazeGrid');
+        const timerDisplay = document.getElementById('timer');
+        const stepsDisplay = document.getElementById('steps');
+        const keysIconsContainer = document.getElementById('keys-icons');
+        const newMazeBtn = document.getElementById('newMazeBtn');
+        const replayBtn = document.getElementById('replayBtn');
+        const questionModal = document.getElementById('questionModal');
+        const winModal = document.getElementById('winModal');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const winStats = document.getElementById('winStats');
+
+        // === Инициализация ===
+        function init() {
+            mazeGrid.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+            createKeyIcons();
+
+            newMazeBtn.addEventListener('click', resetGame);
+            replayBtn.addEventListener('click', resetGame);
+            document.addEventListener('keydown', handleKeyPress);
+
+            resetGame();
+        }
+
+        function createKeyIcons() {
+            keysIconsContainer.innerHTML = '';
+            for (let i = 0; i < KEY_COUNT; i++) {
+                const icon = document.createElement('div');
+                icon.className = 'key-icon';
+                icon.id = `key-icon-${i}`;
+                keysIconsContainer.appendChild(icon);
+            }
+        }
+
+        // === Генерация лабиринта ===
+        function generateMaze() {
+            maze = Array(ROWS).fill().map(() => Array(COLS).fill(1));
+            const stack = [{ x: 1, y: 1 }];
+            maze[1][1] = 0;
+            const dirs = [{dx:0,dy:-2},{dx:2,dy:0},{dx:0,dy:2},{dx:-2,dy:0}];
+
+            while (stack.length) {
+                const cur = stack.pop();
+                const neighbors = [];
+                for (const d of dirs) {
+                    const nx = cur.x + d.dx, ny = cur.y + d.dy;
+                    if (nx > 0 && nx < COLS-1 && ny > 0 && ny < ROWS-1 && maze[ny][nx] === 1) {
+                        neighbors.push({x:nx, y:ny, wx:cur.x + d.dx/2, wy:cur.y + d.dy/2});
+                    }
+                }
+                if (neighbors.length) {
+                    stack.push(cur);
+                    const n = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    maze[n.y][n.x] = 0;
+                    maze[n.wy][n.wx] = 0;
+                    stack.push({x:n.x, y:n.y});
+                }
+            }
+        }
+
+        // === Отображение ===
+        function render() {
+            mazeGrid.innerHTML = '';
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    if (maze[y][x] === 1) cell.classList.add('wall');
+
+                    if (x === player.x && y === player.y) {
+                        cell.classList.add('player');
+                    } else if (collectedKeys >= KEY_COUNT && x === goal.x && y === goal.y) {
+                        cell.classList.add('goal');
+                    } else if (keys.some(k => k.x === x && k.y === y && !k.collected)) {
+                        cell.classList.add('key');
+                    } else if (enemies.some(e => e.x === x && e.y === y)) {
+                        cell.classList.add('enemy');
+                    }
+
+                    mazeGrid.appendChild(cell);
+                }
+            }
+        }
+
+        // === Логика ===
+        function isWalkable(x, y) {
+            return x >= 0 && x < COLS && y >= 0 && y < ROWS && maze[y][x] === 0;
+        }
+
+        function generateKeys() {
+            keys = [];
+            for (let i = 0; i < KEY_COUNT; i++) {
+                let valid = false;
+                while (!valid) {
+                    const x = Math.floor(Math.random() * COLS);
+                    const y = Math.floor(Math.random() * ROWS);
+                    if (isWalkable(x, y) && !(x === player.x && y === player.y) &&
+                        !keys.some(k => k.x === x && k.y === y)) {
+                        keys.push({x, y, collected: false});
+                        valid = true;
+                    }
+                }
+            }
+        }
+
+        function generateGoal() {
+            let valid = false;
+            while (!valid) {
+                const x = Math.floor(Math.random() * COLS);
+                const y = Math.floor(Math.random() * ROWS);
+                if (isWalkable(x, y) && !(x === player.x && y === player.y) &&
+                    !keys.some(k => k.x === x && k.y === y && !k.collected) &&
+                    !enemies.some(e => e.x === x && e.y === y)) {
+                    goal = {x, y};
+                    valid = true;
+                }
+            }
+        }
+
+        function generateEnemies() {
+            enemies = [];
+            for (let i = 0; i < 2; i++) {
+                let valid = false;
+                while (!valid) {
+                    const x = Math.floor(Math.random() * COLS);
+                    const y = Math.floor(Math.random() * ROWS);
+                    if (isWalkable(x, y) && !(x === player.x && y === player.y) &&
+                        !keys.some(k => k.x === x && k.y === y && !k.collected)) {
+                        enemies.push({x, y});
+                        valid = true;
+                    }
+                }
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (!gameStarted) {
+                gameStarted = true;
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 100);
+            }
+
+            let nx = player.x, ny = player.y;
+            const keyMap = { ArrowUp: [0,-1], ArrowDown: [0,1], ArrowLeft: [-1,0], ArrowRight: [1,0], w:[0,-1], s:[0,1], a:[-1,0], d:[1,0] };
+            const move = keyMap[e.key.toLowerCase()] || keyMap[e.key];
+            if (!move) return;
+
+            nx += move[0];
+            ny += move[1];
+
+            if (isWalkable(nx, ny)) {
+                player.x = nx;
+                player.y = ny;
+                steps++;
+                stepsDisplay.textContent = steps;
+
+                checkForKey();
+                if (enemies.some(e => e.x === player.x && e.y === player.y)) {
+                    if (goal.x !== -1) generateGoal();
+                }
+                if (collectedKeys >= KEY_COUNT && player.x === goal.x && player.y === goal.y) {
+                    win();
+                }
+                render();
+            }
+        }
+
+        function checkForKey() {
+            for (let i = 0; i < keys.length; i++) {
+                if (!keys[i].collected && player.x === keys[i].x && player.y === keys[i].y) {
+                    showQuestion(i);
+                    return;
+                }
+            }
+        }
+
+        let currentKeyIndex = -1;
+        function showQuestion(idx) {
+            currentKeyIndex = idx;
+            const q = questions[Math.floor(Math.random() * questions.length)];
+            questionText.textContent = `Past tense of "${q[0]}"?`;
+            optionsContainer.innerHTML = '';
+            for (let i = 1; i <= 3; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = q[i];
+                btn.onclick = () => answerSelected(btn, q[4], idx);
+                optionsContainer.appendChild(btn);
+            }
+            questionModal.style.display = 'flex';
+        }
+
+        function answerSelected(btn, correct, idx) {
+            const isCorrect = parseInt(btn.textContent) === correct;
+            if (isCorrect) {
+                keys[idx].collected = true;
+                collectedKeys++;
+                document.getElementById(`key-icon-${idx}`).classList.add('collected');
+                if (collectedKeys === KEY_COUNT) {
+                    generateGoal();
+                    generateEnemies();
+                }
+            } else {
+                // Переместить ключ
+                let valid = false;
+                while (!valid) {
+                    const x = Math.floor(Math.random() * COLS);
+                    const y = Math.floor(Math.random() * ROWS);
+                    if (isWalkable(x, y) && !(x === player.x && y === player.y) &&
+                        !keys.some(k => k.x === x && k.y === y && !k.collected)) {
+                        keys[idx] = {x, y, collected: false};
+                        valid = true;
+                    }
+                }
+            }
+            questionModal.style.display = 'none';
+            render();
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const min = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const sec = (elapsed % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${min}:${sec}`;
+        }
+
+        function win() {
+            clearInterval(timerInterval);
+            winStats.textContent = `Time: ${timerDisplay.textContent} • Steps: ${steps}`;
+            winModal.style.display = 'flex';
+        }
+
+        function resetGame() {
+            clearInterval(timerInterval);
+            generateMaze();
+            player = { x: 1, y: 1 };
+            goal = { x: -1, y: -1 };
+            collectedKeys = 0;
+            steps = 0;
+            gameStarted = false;
+            stepsDisplay.textContent = '0';
+            timerDisplay.textContent = '00:00';
+
+            for (let i = 0; i < KEY_COUNT; i++) {
+                document.getElementById(`key-icon-${i}`).classList.remove('collected');
+            }
+
+            questionModal.style.display = 'none';
+            winModal.style.display = 'none';
+
+            generateKeys();
+            render();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
